@@ -1,199 +1,191 @@
-const loadData = () =>{
-    fetch('https://openapi.programming-hero.com/api/ai/tools')
-    .then(res => res.json())
-    .then(data => findData (data.data.tools))
-}
+// blog page event handler added 
+document.getElementById("blog-btn").addEventListener("click", function () {
+  location.href = "blog.html";
+});
 
-const findData =(allData)=>{
-      
-        const today = new Date();
-        const year = today.getFullYear();
-        const mes = today.getMonth()+1;
-        const dia = today.getDate();
-        const date = dia+"/"+mes+"/"+year;
-        const container = document.getElementById('all-containers');
-            container.innerHTML = " ";
-            // -----six card loadde--------- //
-        allData.slice(0,6).forEach(item => {
-            console.log(item);
-            const div = document.createElement('div');
-            div.innerHTML = `
-                <div class="col ">
-                <div style="height:450px; width: 350px;" class="card p-3  shadow-sm ">
-                    <img  src="${item.image}" class="card-img-top rounded h-50 w-100" alt="...">
-                <div class="card-body ">
-                    <h5 class="card-title fw-bolder">Features</h5>
-                    <ol>
-                    ${item.features.map(item => `
-                      <li>
-                        ${item }
-                       
-                      </li>
-                    `).join('')}
-                  </ol>
-                    <hr></hr>
-                <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="card-title fw-bolder">${item.name}</h5>
-                    <div class="d-flex gap-2 ">
-                    <span><i class="fa-regular fa-calendar"></i></i></span>
-                    <p>${date}</p>
-                </div>
-                </div>
-                <div>
-                <button  onclick="cardDetailsShow('${item.id}')" class="rounded-circle shadow-sm  bg-warning bg-opacity-10 border border-0"  data-bs-target="#exampleModalToggle2" data-bs-toggle="modal"><i class="fa-solid fa-arrow-right text-danger fs-5 p-3"></i></button>
-                </div>
-                </div>
-               </div>
-              </div>
-             </div>
-            </div>
-        `
-        container.appendChild(div);
+// global variable declaration
+let count = 0;
+let timer;
+let quizData;
+let answers = [];
 
-    });
+// Dom elements called
+let startQuiz = document.querySelector("#startQuiz");  
+let rulesContainer = document.querySelector("#rulesContainer");
+let alertContainer = document.querySelector("#alertContainer");
+let submitContainer = document.querySelector("#submitContainer");
+let quizContainer = document.querySelector("#quizContainer");
+let answersContainer = document.querySelector("#answersContainer");
+let displayResult = document.querySelector("#displayResult");
 
-        const displayMoreData  = () =>{
-            
-            const container = document.getElementById('all-containers');
-            
-            allData.slice(6,12).forEach(item => {
-               
-                const div = document.createElement('div');
-                // ------ more card loaded --------//
-                div.innerHTML = `
-                <div class="col ">
-                <div style="height:450px; width: 350px;" class="card p-3  shadow-sm ">
-                    <img  src="${item.image}" class="card-img-top rounded h-50 w-100" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title fw-bolder">Features</h5>
-                    <ol>
-                    ${item.features.map(item => `
-                      <li> ${item } </li>
-                    `).join('')}
-                  </ol>
-                    <hr></hr>
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title fw-bolder">${item.name}</h5>
-                        <div class="d-flex gap-2 ">
-                        <span><i class="fa-regular fa-calendar"></i></i></span>
-                        <p>${date}</p>
-                    </div>
-                </div>
-                <div>
-                    <button  onclick="cardDetailsShow('${item.id}')" class="rounded-circle shadow-sm  bg-warning bg-opacity-10 border border-0"  data-bs-target="#exampleModalToggle2" data-bs-toggle="modal"><i class="fa-solid fa-arrow-right text-danger fs-5 p-3"></i></button>
-                </div>
-                </div>
-               </div>
-              </div>
-             </div>
-            </div>
-            `
-            container.appendChild(div);
-            toggleSpinner(false);
-            
-    });
+// EventListener for quiz start button
+startQuiz.addEventListener("click", () => {
+  let countDown = document.querySelector("#countDownContainer");
+  let counter = document.querySelector("#counter");
+  let counterNum = 2;
+  countDown.classList.remove("hidden");
+  countDown.classList.add("flex");
 
-    document.getElementById('see-more').style.display = 'none'
-
+  let x = setInterval(() => {
+    if (counterNum < 0) {
+      countDown.classList.remove("flex");
+      countDown.classList.add("hidden");
+      counterNum = 3;
+      count = 0;
+      timer = null;
+      quizData = null;
+      answers = [];
+      rulesContainer.classList.add("hidden");
+      alertContainer.classList.remove("hidden");
+      submitContainer.classList.remove("hidden");
+      submitContainer.classList.add("flex");
+      loadQuiz();
+      quizTimer();
+      clearInterval(x);
     }
+    counter.innerText = counterNum;
+    counterNum--;
+  }, 1000);
+});
 
-    document.getElementById('see-more').addEventListener('click', function (){
-        toggleSpinner(true)
-      let timer1 = setTimeout(() => displayMoreData(),500);
+// All quiz data fetched from json
+const loadQuiz = async () => {
+  const res = await fetch("./data/quiz.json");
+  const data = await res.json();
+  quizData = data;
+  displayQuiz(data);
+};
 
-      return () => {
-        toggleSpinner(false)
-        clearTimeout(timer1);
-        
-      };
-      
-    } )
-   
-}
+// Displaying quiz on quiz page
+const displayQuiz = (data) => {
+  if (!data) {
+    quizContainer.innerHTML = "";
+    return;
+  }
 
-const cardDetailsShow = (id) =>{
+  data.forEach((quiz, i) => {
+    quizContainer.innerHTML += `<div class="m-3 py-3 px-4 shadow-sm rounded">
+  <div class="flex items-center">
+    <div class="h-8 w-8 bg-green-300 rounded-full flex justify-center items-center text-green-800 mr-3">
+      ${i + 1}
+    </div>
+    <p class="text-gray-800 text-sm">${quiz.question}</p>
+  </div>
+  <div class="grid grid-cols-2 gap-4 mt-5">
+    ${displayQuizOptions(quiz.options, i)}
+  </div>
+</div>`;
+  });
+};
+
+// EventListener for quiz submit button
+document.getElementById("submit").addEventListener("click", () => {
+  if (answers.length < 6) {
+    return;
+  }
   
-    const url = `https://openapi.programming-hero.com/api/ai/tool/${id}`
-    fetch(url)
-    .then(res => res.json())
-    .then(data =>displayCardDetails(data))
-}
+  quizTimer(true);
+  answersContainer.innerHTML = `<div class="my-4">
+  <i class="fa-solid fa-fan animate-spin text-2xl text-green-600"></i>
+  <p class="text-xs animate-pulse">Please Wait, We are checking...</p>
+</div>`;
+  let timeTaken = document.querySelector("#count");
+  let totalMark = 0;
+  let grade = {
+    status: "",
+    color: "",
+  };
 
-// -------- modal inner card loaded -------//
-const displayCardDetails = (card) =>{
-    console.log(card);
-    const {description, pricing, features,integrations, image_link,input_output_examples
-    } = card.data;
-    const getModalBody = document.getElementById('modals-body');
-    getModalBody.innerHTML = " ";
-    const div = document.createElement('div');
-    div.innerHTML = `
-    <div class="row row-cols-1 row-cols-md-2 g-4 px-4 py-4">
-        <div class="col">
-            <div class="card h-100  shadow-sm bg-danger-subtle border border-danger bg-opacity-10">
-                <div class="card-body">
-                    <h4 class="card-title fw-semibold">${description}</h4>
-                        <div class=" row g-4 text-center mt-5">
-                            <div class="border bg-light-subtle  border-light   text-success p-2 rounded w-25 col mx-1 py-4">
-                              <h6 class="fw-bold">${pricing[0].price}</h6>
-                              <h6 class="fw-bold">${pricing[0].plan}</h6>
-                        </div>
-                        <div class="border bg-light-subtle  border-light   text-warning p-2 rounded w-25  col mx-1 py-4 ">
-                            <h6 class="fw-bold">${pricing[1].price}</h6>
-                            <h6 class="fw-bold">${pricing[1].plan}</h6>
-                        </div>
-                        <div class="border bg-light-subtle  border-light   text-danger p-2 rounded w-25  col mx-1 ">
-                            <h6 class="fw-bold">${pricing[2].price}</h6>
-                            <h6 class="fw-bold">${pricing[2].plan}</h6>
-                        </div>
-                    </div>
-                          
-                    <div class="d-flex  justify-content-around  mt-5">
-                        <div>
-                            <h5 class="fw-bold">Features</h5>
-                            
-                                <li>${features[1].feature_name}</li>
-                                <li>${features[2].feature_name}</li>
-                                <li>${features[3].feature_name}</li>
-                              </ul>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold">Integrations</h5>
-                              <li>${integrations[0]}</li>
-                              <li>${integrations[1]}</li>
-                              <li>${integrations[2]}</li>
-                        </div>
-                     </div>
-                    </div>
-                      </div>
-                    </div>
-                    <div class="col">
-                      <div class="card h-100 p-3 ">
-                        <div class="rounded  ">
-                        <img src="${image_link[0]}" class="card-img-top rounded h-100 w-100" alt="...">
-                        </div>
-                        <div class="card-body mt-5">
-                          <h5 class="card-title text-center">${input_output_examples[0].input}</h5>
-                          <p class="card-text text-center">${input_output_examples[0].output}</p>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-    ` 
-    getModalBody.appendChild(div);
-}
- 
-const toggleSpinner = isLoading =>{
-    const getLoaderId = document.getElementById('loader');
-    if(isLoading){
-        getLoaderId.classList.remove('d-none');
+  for (let ans of answers) {
+    if (ans.answer === ans.givenAns) {
+      totalMark += 10;
     }
-    else{
-        getLoaderId.classList.add('d-none');
-    }
-   
-}
+  }
 
-loadData();
+  if (totalMark === 60) {
+    grade.status = "Excellent";
+    grade.color = "text-green-600";
+  } else if (totalMark >= 40 && totalMark < 60) {
+    grade.status = "Good";
+    grade.color = "text-orange-600";
+  } else {
+    grade.status = "Poor";
+    grade.color = "text-red-600";
+  }
+
+  // data setting on local storage and getting data from local storage
+  let storage = JSON.parse(localStorage.getItem("results"));
+  if (storage) {
+    localStorage.setItem(
+      "results",
+      JSON.stringify([
+        ...storage,
+        {
+          marks: totalMark,
+          examTime: timeTaken.innerText,
+          status: grade.status,
+        },
+      ])
+    );
+  } else {
+    localStorage.setItem(
+      "results",
+      JSON.stringify([
+        {
+          marks: totalMark,
+          examTime: timeTaken.innerText,
+          status: grade.status,
+        },
+      ])
+    );
+  }
+
+  // Right side bar/ answer section
+  let x = setTimeout(() => {
+    showAnswers(answers);
+    displayResult.innerHTML = `<div
+    class="h-[220px] w-[220px] mx-auto mt-8 flex flex-col justify-center border-2 rounded-tr-[50%] rounded-bl-[50%]"
+  >
+    <h3 class="text-xl ${grade.color}">${grade.status}</h3>
+    <h1 class="text-3xl font-bold my-2">
+      ${totalMark}<span class="text-slate-800">/60</span>
+    </h1>
+    <p class="text-sm flex justify-center items-center gap-2">
+      Total Time: <span class="text-xl text-orange-500">${timeTaken.innerText.replace(
+        "sec",
+        ""
+      )}<span class="text-xs">sec</span></span>
+    </p>
+  </div>
+  
+  <button onclick="location.reload();" class="bg-green-600 text-white w-full py-2 rounded mt-16">Restart</button>
+  ${
+    storage
+      ? `<div class="mt-5">
+      <h1 class="text-center">Previous Submissions <button class="text-blue-800 text-xs" onclick={localStorage.clear();location.reload()}>Clear History</button></h1>
+    <div
+    class="flex justify-between items-center border rounded p-2 my-2 shadow-sm font-medium">
+    <div>Marks</div>
+    <div>Grade</div>
+    <div>Time</div>
+    </div>
+    ${storage
+      ?.reverse()
+      ?.map(
+        (item) => `<div
+      class="flex justify-between items-center border rounded p-2 my-2 shadow-sm">
+      <div>${item.marks}/60</div>
+      <div>${item.status}</div>
+      <div>${item.examTime}</div>
+      </div>`
+      )
+      ?.join("")}`
+      : ""
+  }
+  </div>
+  `;
+
+    clearTimeout(x);
+  }, 1500);
+  window.scrollTo(0, 0);
+});
